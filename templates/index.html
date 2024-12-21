@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análisis de Regresión de Poisson</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+</head>
+
+<style>
+    body {
+        background-image: url('../static/UNA-Puno-2.png'); /* Reemplaza 'fondo.jpg' con la ruta de tu imagen */
+        background-size: cover;
+        background-attachment: fixed;
+        background-position: center;
+        color: white;
+    }
+
+    .container {
+        background: rgba(0, 0, 0, 0.4); /* 70% transparente */
+        padding: 20px;
+        border-radius: 10px;
+        margin-top: 40px;
+    }
+
+    h1, h3 {
+        color: #00ff7b;
+    }
+
+    .btn-primary, .btn-success, .btn-warning {
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    }
+
+    .form-label {
+        font-weight: bold;
+    }
+
+    .table {
+        background: white;
+        color: rgb(80, 75, 75);
+    }
+
+    .navbar {
+        background-color: rgba(0, 0, 0, 0.6); /* 40% transparente */
+    }
+
+    .navbar-brand, .nav-link {
+        color: #00ff7b !important;
+    }
+
+    .nav-link:hover {
+        color: white !important;
+    }
+
+    .section {
+        display: none; /* Ocultar todas las secciones por defecto */
+    }
+
+    .section.active {
+        display: block; /* Mostrar la sección activa */
+    }
+</style>
+
+<body>
+    <!-- Menú de Navegación -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">Análisis de Regresión de Poisson</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-section="generar-datos">Generar Datos Sintéticos</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-section="datos-generados">Datos Generados</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-section="cargar-datos">Cargar Datos y Realizar Análisis</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-section="resultados">Resultados del Análisis</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-section="graficos">Gráficos</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Contenido Principal -->
+    <div class="container mt-4">
+        <h1 class="text-center">UNIVERSIDAD NACIONAL DEL ALTIPLANO</h1>
+        <h2 class="text-center">FACULTAD DE INGENIERÍA INFORMÁTICA Y ESTADÍSTICA</h2>
+        <h3 class="text-center">ANÁLISIS DE REGRESIÓN DE POISSON</h3>
+        <h4 class="text-center">ESTUDIANTE: JUAN CARLOS ANQUISE VARGAS</h4>
+        <h4 class="text-center">DOCENTE: MAMANI CALISAYA MILTON VLADIMIR</h4>
+
+        <!-- Secciones -->
+        <div class="section active" id="generar-datos">
+            <h3 class="mt-4">Generar Datos Sintéticos</h3>
+            <form id="generateForm" enctype="multipart/form-data">
+                <div class="mb-3">
+                    <label for="n_samples" class="form-label">Número de Muestras:</label>
+                    <input type="number" id="n_samples" name="n_samples" class="form-control" value="100">
+                </div>
+                <button type="submit" class="btn btn-primary">Generar Datos</button>
+            </form>
+        </div>
+
+        <div class="section" id="datos-generados">
+            <h3 class="mt-4">Datos Generados</h3>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Número de Empleados</th>
+                        <th>Horas de Capacitación</th>
+                        <th>Antigüedad Promedio</th>
+                        <th>Presupuesto de Seguridad</th>
+                        <th>Número de Supervisores</th>
+                        <th>Número de Accidentes</th>
+                    </tr>
+                </thead>
+                <tbody id="dataTable">
+                    <!-- Los datos generados se agregarán dinámicamente aquí -->
+                </tbody>
+            </table>
+            <div class="mt-3">
+                <button id="downloadExcel" class="btn btn-success">Descargar en Excel</button>
+                <button id="downloadCSV" class="btn btn-secondary">Descargar en CSV</button>
+            </div>
+        </div>
+
+        <div class="section" id="cargar-datos">
+            <h3 class="mt-4">Cargar Datos y Realizar Análisis</h3>
+            <form id="uploadForm" enctype="multipart/form-data">
+                <div class="mb-3">
+                    <label for="file" class="form-label">Selecciona un archivo Excel o CSV:</label>
+                    <input type="file" id="file" name="file" class="form-control" accept=".xlsx, .csv">
+                </div>
+                <div id="fileDetails" class="mb-3">
+                    <!-- Detalles del archivo se mostrarán aquí -->
+                </div>
+                <button type="submit" class="btn btn-success">Subir y Analizar</button>
+            </form>
+            <h3 class="mt-4">Datos del Archivo Subido</h3>
+            <div id="uploadedDataSection">
+                <!-- Los datos del archivo subido se agregarán dinámicamente aquí -->
+            </div>
+        </div>
+
+        <div class="section" id="resultados">
+            <h3 class="mt-4">Resultados del Análisis</h3>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Variable</th>
+                        <th>Coeficiente</th>
+                        <th>Exp(Coeficiente)</th>
+                        <th>Cambio %</th>
+                        <th>P-valor</th>
+                    </tr>
+                </thead>
+                <tbody id="resultsTable">
+                    <!-- Los resultados se agregarán dinámicamente aquí -->
+                </tbody>
+            </table>
+            <h3 class="mt-4">Interpretaciones</h3>
+            <div id="interpretations">
+                <!-- Las interpretaciones se agregarán dinámicamente aquí -->
+            </div>
+        </div>
+
+        <div class="section" id="graficos">
+            <h3 class="mt-4">Gráficos</h3>
+            <div id="plotSection" class="mt-4">
+                <!-- Los gráficos se mostrarán dinámicamente aquí -->
+            </div>
+        </div>
+    </div>
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <script>
+        $(document).ready(function () {
+            // Función para mostrar/ocultar secciones
+            $('.nav-link').on('click', function (e) {
+                e.preventDefault();
+                const sectionId = $(this).data('section');
+                $('.section').removeClass('active');
+                $('#' + sectionId).addClass('active');
+            });
+
+            // Generar datos
+            $('#generateForm').on('submit', function (e) {
+                e.preventDefault();
+                const formData = new FormData(this);
+
+                $.ajax({
+                    url: '/generate_data',
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function (data) {
+                        const dataTable = $('#dataTable');
+                        dataTable.empty();
+
+                        JSON.parse(data).forEach((row, index) => {
+                            dataTable.append(`
+                                <tr>
+                                    <td>${index + 1}</td>
+                                    <td>${row.n_empleados}</td>
+                                    <td>${row.horas_capacitacion.toFixed(2)}</td>
+                                    <td>${row.antiguedad_promedio.toFixed(2)}</td>
+                                    <td>${row.presupuesto_seguridad.toFixed(2)}</td>
+                                    <td>${row.n_supervisores}</td>
+                                    <td>${row.n_accidentes}</td>
+                                </tr>
+                            `);
+                        });
+                    }
+                });
+            });
+
+            // Descargar datos en Excel
+            $('#downloadExcel').on('click', function () {
+                window.location.href = '/download_data?format=excel';
+            });
+
+            // Descargar datos en CSV
+            $('#downloadCSV').on('click', function () {
+                window.location.href = '/download_data?format=csv';
+            });
+
+            // Mostrar detalles del archivo seleccionado
+            $('#file').on('change', function () {
+                const fileDetails = $('#fileDetails');
+                fileDetails.empty();
+
+                const file = this.files[0];
+                if (file) {
+                    fileDetails.append(`
+                        <p><strong>Nombre del archivo:</strong> ${file.name}</p>
+                        <p><strong>Tamaño del archivo:</strong> ${(file.size / 1024).toFixed(2)} KB</p>
+                        <p><strong>Tipo de archivo:</strong> ${file.type}</p>
+                    `);
+                }
+            });
+
+            // Cargar y analizar datos
+            $('#uploadForm').on('submit', function (e) {
+                e.preventDefault();
+                const formData = new FormData(this);
+
+                // Mostrar los datos del archivo subido
+                $.ajax({
+                    url: '/show_uploaded_data',
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function (data) {
+                        const uploadedDataSection = $('#uploadedDataSection');
+                        uploadedDataSection.empty();
+
+                        const parsedData = JSON.parse(data);
+                        if (parsedData.length > 0) {
+                            const columns = Object.keys(parsedData[0]);
+                            let tableHtml = `
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+                            `;
+
+                            columns.forEach(column => {
+                                tableHtml += `<th>${column}</th>`;
+                            });
+
+                            tableHtml += `
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                            `;
+
+                            parsedData.forEach((row, index) => {
+                                tableHtml += `<tr><td>${index + 1}</td>`;
+                                columns.forEach(column => {
+                                    tableHtml += `<td>${row[column]}</td>`;
+                                });
+                                tableHtml += `</tr>`;
+                            });
+
+                            tableHtml += `
+                                    </tbody>
+                                </table>
+                            `;
+
+                            uploadedDataSection.append(tableHtml);
+                        }
+                    }
+                }).then(function () {
+                    // Realizar el análisis y mostrar los resultados
+                    $.ajax({
+                        url: '/upload',
+                        type: 'POST',
+                        data: formData,
+                        processData: false,
+                        contentType: false,
+                        success: function (data) {
+                            const resultsTable = $('#resultsTable');
+                            resultsTable.empty();
+
+                            const results = JSON.parse(data);
+                            results.forEach(function (row) {
+                                resultsTable.append(`
+                                    <tr>
+                                        <td>${row.Variable}</td>
+                                        <td>${row.Coeficiente.toFixed(4)}</td>
+                                        <td>${row['Exp(Coeficiente)'].toFixed(4)}</td>
+                                        <td>${row['Cambio %'].toFixed(2)}%</td>
+                                        <td>${row['P-valor'].toFixed(4)}</td>
+                                    </tr>
+                                `);
+                            });
+
+                            // Mostrar la sección de resultados
+                            $('.section').removeClass('active');
+                            $('#resultados').addClass('active');
+
+                            // Generar gráficos
+                            generatePlots(formData);
+
+                            // Mostrar interpretaciones
+                            showInterpretations(results);
+                        }
+                    });
+                });
+            });
+
+            // Función para generar gráficos
+            function generatePlots(formData) {
+                // Generar diagrama de dispersión
+                formData.append('plot_type', 'scatter');
+                formData.append('x_variable', 'Número de Empleados');
+                formData.append('y_variable', 'Número de Accidentes');
+
+                $.ajax({
+                    url: '/scatter_plot',
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function (data) {
+                        const plotSection = $('#plotSection');
+                        plotSection.append(`<img src="data:image/png;base64,${data}" alt="Scatter Plot" class="img-fluid mb-3">`);
+                    }
+                });
+
+                // Generar histograma
+                formData.append('plot_type', 'histogram');
+                formData.append('variable', 'Número de Accidentes');
+
+                $.ajax({
+                    url: '/histogram_plot',
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function (data) {
+                        const plotSection = $('#plotSection');
+                        plotSection.append(`<img src="data:image/png;base64,${data}" alt="Histogram Plot" class="img-fluid mb-3">`);
+                    }
+                });
+
+                // Generar diagrama de series de tiempo
+                formData.append('plot_type', 'time_series');
+                formData.append('variable', 'Número de Accidentes');
+
+                $.ajax({
+                    url: '/time_series_plot',
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function (data) {
+                        const plotSection = $('#plotSection');
+                        plotSection.append(`<img src="data:image/png;base64,${data}" alt="Time Series Plot" class="img-fluid mb-3">`);
+                    }
+                });
+            }
+
+            // Función para mostrar interpretaciones
+            function showInterpretations(results) {
+                const interpretations = $('#interpretations');
+                interpretations.empty();
+
+                results.forEach(function (row) {
+                    interpretations.append(`
+                        <p><strong>${row.Variable}:</strong> El coeficiente es ${row.Coeficiente.toFixed(4)}, lo que indica que... (Aquí puedes agregar tu interpretación específica)</p>
+                    `);
+                });
+            }
+        });
+    </script>
+</body>
+
+</html>
